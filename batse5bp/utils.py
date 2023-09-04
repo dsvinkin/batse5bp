@@ -22,16 +22,21 @@ def retrieve_gzip(url, cache):
     If it does not exist, retrieve the file using the URL, cache a gzipped
     version, and return an opened file object accessing it.
     """
+
     head, tail = split(url[6:])
     path = join(cache, tail)
     gzpath = path + '.gz'
+
     if not exists(gzpath):
-        print 'Accessing', tail, 'at CGRO SSC...'
-        name, hdrs = urllib.urlretrieve(url, path)
+        print ('Accessing', tail, 'at CGRO SSC...')
+        name, hdrs = urllib.request.urlretrieve(url, path)
+
         if name != path:
             raise ValueError('URL target/name mismatch!')
+
         check_call(['gzip', path])
         return GzipFile(gzpath, 'r')
+
     return GzipFile(gzpath, 'r')
 
 def write_seq(fob, seq, format, per_line, label=None):

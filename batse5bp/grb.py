@@ -13,10 +13,10 @@ import urllib
 
 from PIL import Image
 
-from locations import root, trigger_paths, trigger_url, raw_cache
-from locations import ascii64_paths, ascii64_url
-from drm import DRMs_DISCSC
-from ascii64 import ASCII64
+from .locations import root, trigger_paths, trigger_url, raw_cache
+from .locations import ascii64_paths, ascii64_url
+from .drm import DRMs_DISCSC
+from .ascii64 import ASCII64
 
 
 class GRB(object):
@@ -44,11 +44,13 @@ class GRB(object):
         # Break record into the trigger/name, Ulysses flag, and rest,
         # since there may be no space between the name and Uflag.
         # (The Ulysses flag is only in the published 4B catalog.)
+
         start = basic_record[:18].strip().split()
         # Uflag = basic_record[16]
         cols = basic_record[18:].strip().split()
         
         self.trigger = int(start[0])
+        print(start[1], start[2])
         self.name = start[1] + '_' + start[2]
         self.desig = start[2]
         self.in_4B = start[1] == '4B'
@@ -82,11 +84,12 @@ class GRB(object):
 
         self.a64_group, self.a64_rfname, tail = ascii64_paths(self.trigger)
         self.a64_remote = ascii64_url + tail
+        
 
     def set_bright(self, trigger, cols):
         """Add peak flux & fluence data from a brightness table record."""
         if trigger != self.trigger:
-            raise ValueError, 'Flux data for wrong trigger!'
+            raise ValueError('Flux data for wrong trigger!')
         for i, name in enumerate(self.flux_attributes):
             setattr(self, name, float(cols[i]))
         self.has_flux = True
@@ -94,7 +97,7 @@ class GRB(object):
     def set_durn(self, trigger, cols):
         """Add duration data from a duration table record."""
         if trigger != self.trigger:
-            raise ValueError, 'Duration data for wrong trigger!'
+            raise ValueError('Duration data for wrong trigger!')
         for i, name in enumerate(self.duration_attributes):
             setattr(self, name, float(cols[i]))
         self.has_durn = True
@@ -145,7 +148,7 @@ class GRB(object):
         resource = join(self.grb_dir, fname)
         if not exists(resource):
             remote = self.remote_dir + fname
-            urllib.urlretrieve(remote, resource)
+            urllib.request.urlretrieve(remote, resource)
         return resource
 
     def raw_cached_path(self, fname):
@@ -159,7 +162,7 @@ class GRB(object):
         resource = join(root, raw_cache, fname)
         if not exists(resource):
             remote = self.remote_dir + fname
-            urllib.urlretrieve(remote, resource)
+            urllib.request.urlretrieve(remote, resource)
         return resource
 
     def open_cached(self, fname):

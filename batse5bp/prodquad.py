@@ -47,8 +47,8 @@ from numpy import sqrt, empty, ones_like, array, concatenate, arange
 from numpy import sum, dot, prod, delete
 from scipy.special.orthogonal import p_roots  # Gauss-Legendre nodes, wts
 
-from quad import Quad, CompositeQuad
-from poly import roots2coefs, indef2def
+from .quad import Quad, CompositeQuad
+from .poly import roots2coefs, indef2def
 
 
 __all__ = ['ProdQuad11', 'ProdQuad12', 'ProdQuadRule', 'CompositeQuad']
@@ -556,8 +556,8 @@ class ProdQuadRule(object):
         The rule stored in the instance will *not* be changed.
         """
         g_nodes, g_wts = self.get_g_nodes_wts(a, b)
-        print g_nodes
-        print g_wts
+        print (g_nodes)
+        print (g_wts)
         if ufunc:
             gvals = g(g_nodes)
         else:

@@ -20,13 +20,13 @@ Created 2012-10-22 by Tom Loredo
 """
 
 from os.path import join, exists
-import cPickle
+import pickle
 import urllib
 
 import numpy as np
 from numpy import loadtxt, empty, linspace, array
 
-from locations import root, raw_cache
+from .locations import root, raw_cache
 
 # This docstring contains the text of the ascii_data README file at
 # the CGRO SSC:
@@ -132,25 +132,35 @@ class ASCII64:
         self.grb = grb
         # Note local pkl file name is remote file name + '.pkl'
         a64_path = join(grb.grb_dir, grb.a64_rfname+'.pkl')
+
         if exists(a64_path):
+
             # print 'Reading existing a64 pickle:', a64_path
             ifile = open(a64_path, 'rb')
-            data = cPickle.load(ifile)
+            data = pickle.load(ifile)
             ifile.close()
+
             for attr in self.pkl_attrs:
                 setattr(self, attr, data[attr])
         else:
+
             a64_raw = join(root, raw_cache, grb.a64_rfname)
+
             if not exists(a64_raw):
-                # print 'Fetching a64 data from SSC...'
-                urllib.urlretrieve(grb.a64_remote, a64_raw)
+                print('Fetching a64 data from SSC...')
+                print(f'a64 data: {grb.a64_remote}')
+                #exit()
+                urllib.request.urlretrieve(grb.a64_remote, a64_raw)
+
             dfile = open(a64_raw, 'r')
             dfile.readline()  # header
             meta = dfile.readline().strip().split()
+
             try:
                 assert int(meta[0]) == grb.trigger
             except:
                 raise ValueError('Trigger \# mismatch for ASCII64 data!')
+
             self.n_asc64 = int(meta[1])
             self.n_discla = int(meta[2])
             self.olap = int(meta[3])
@@ -160,10 +170,10 @@ class ASCII64:
 
             # Break up the data into the (early) DISCLA bins, the (late) 64 ms
             # bins (PREB + DISCSC), and a possible (mid) truncated DISCLA bin.
-            self.n_early = self.n_discla / 16
+            self.n_early = self.n_discla // 16
             early = empty((4, self.n_early), int)
             for ch in range(0,4):
-                for i in xrange(self.n_early):
+                for i in range(self.n_early):
                     j = 16 * i
                     early[ch,i] = int(round(16*raw[ch,j]))
             self.early = early
@@ -177,14 +187,14 @@ class ASCII64:
                 mid = empty((4,1), int)  # must be 4x1 for concat with others
                 j = self.n_early*16
                 for ch in range(0,4):
-                    mid[ch] = int(round(n_trail*raw[ch,j]))
+                    mid[ch] = int(round(n_trail * raw[ch,j]))
             self.mid = mid
  
             self.n_late = self.n_asc64 - self.n_discla
             late = empty((4,self.n_late), int)
             for ch in range(4):
-                for j in xrange(self.n_late):
-                    late[ch,j] = int(raw[ch,self.n_discla+j])
+                for j in range(self.n_late):
+                    late[ch,j] = int(raw[ch, self.n_discla+j])
             self.late = late
  
             self.n_bins = self.n_early + self.n_mid + self.n_late
@@ -220,7 +230,7 @@ class ASCII64:
             for attr in self.pkl_attrs:
                 data[attr] = getattr(self, attr)
             ofile = open(a64_path, 'wb')
-            cPickle.dump(data, ofile, -1)  # use highest protocol
+            pickle.dump(data, ofile, -1)  # use highest protocol
             ofile.close()
 
     def rates(self):

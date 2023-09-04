@@ -7,11 +7,11 @@ Created 2012-05-07 by Tom Loredo
 """
 
 # Import modules that deserve easy top-level access if "import *" is used.
-import locations
-import catalog
-import docn
-import grb
+from batse5bp import locations
+from batse5bp import catalog
+from batse5bp import docn
+from batse5bp import grb
 
 # Import objects that deserve easy top-level access.
-from catalog import load_catalog
-from docn import *  # just imports 'show_' functions
+from batse5bp.catalog import load_catalog
+from batse5bp.docn import *  # just imports 'show_' functions

@@ -22,13 +22,13 @@ Created 2012-10-16 by Tom Loredo
 """
 
 from os.path import join, exists
-import cPickle
+import pickle
 
 from numpy import zeros, minimum, array, array_equal
-# import pyfits
+
 from astropy.io import fits
 
-from prodquad import ProdQuadRule, CompositeQuad
+from .prodquad import ProdQuadRule, CompositeQuad
 
 
 # This list of the binary table header fields was obtained from a DISCSC DRM
@@ -360,7 +360,7 @@ class DRMs_DISCSC:
         # Otherwise we have to modify the rules to fit the range.
         wts = []
         for ch in range(self.n_ch):
-            print '*** Ch:', ch
+            print('*** Ch:', ch)
             nodes, ch_wts = self.quad_rules[ch].range_nodes_wts(l, u)
             wts.append(ch_wts)
         return nodes, wts

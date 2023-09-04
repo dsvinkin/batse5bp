@@ -1,6 +1,11 @@
-batse5bp
-=========
+# batse5bp
 
+## Description
+
+This repository is a fork of https://github.com/tloredo/batse5bp
+adapted for Python3
+
+## batse5bp original description
 The batse5bp package provides persistant local access to BATSE GRB data hosted
 at the CGRO SSC.  It accesses both the BATSE GRB catalogs, and a significant
 amount of the detailed GRB data (e.g., time series and spectral data).

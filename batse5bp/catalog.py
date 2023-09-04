@@ -20,20 +20,20 @@ Created 2012-05-06 by Tom Loredo
 
 from os.path import abspath, exists, join, split
 from os import mkdir
-import cPickle
+import pickle
 from collections import OrderedDict
 
 from numpy import array
 
-from grb import GRB, GRBCollection
-from locations import *
-from utils import retrieve_gzip
+from .grb import GRB, GRBCollection
+from .locations import *
+from .utils import retrieve_gzip
 
 __all__ = ['load_catalog']
 
 
-# TODO:  get_grb_classes is presently unused; is there a use case?  May
-# only be useful if the pickled files are unpickled outside this module.
+# TODO:  get_grb_classes is presently unused; is there a use case?  
+# May only be useful if the pickled files are unpickled outside this module.
 
 def get_grb_classes(modname, classname):
     """
@@ -41,7 +41,7 @@ def get_grb_classes(modname, classname):
     `classname`.
     
     This function is for identifying classes encountered when unpickling
-    BATSE 5Bp data; it satisfies the cPickle "find_global" interface.
+    BATSE 5Bp data; it satisfies the pickle "find_global" interface.
     """
     # print 'Module:', modname, ' -- Class:', classname
     if classname == 'GRB':
@@ -49,25 +49,25 @@ def get_grb_classes(modname, classname):
     elif classname == 'GRBCollection':
         return GRBCollection
     else:
-        raise RuntimeError, 'Unrecognized class in pickled data: %s, %s' % (modname, classname)
+        raise RuntimeError('Unrecognized class in pickled data: %s, %s' % (modname, classname))
 
 def read_summaries():
     """
     Read GRB summary information from a pre-existing pickled data file.
     """
     try:
-        sfile = file(join(root, summaries), 'rb')
+        sfile = open(join(root, summaries), 'rb')
     except:
         raise IOError('Summary data file does not exist!')
 
     # Define an unpickler that will recognize grb classes even when unpickling
     # is done elsewhere elsewhere (in which case grb classes may not be on the
     # top level, thwarting normal unpickling).
-    loader = cPickle.Unpickler(sfile)
+    loader = pickle.Unpickler(sfile)
     # loader.find_global = get_grb_classes
     GRBs = loader.load()
     sfile.close()
-    print 'Loaded summary data for', len(GRBs), 'GRBs comprising the 5Bp catalog.'
+    print('Loaded summary data for', len(GRBs), 'GRBs comprising the 5Bp catalog.')
     return GRBs
 
 def get_grb_bright(bfile):
@@ -75,26 +75,35 @@ def get_grb_bright(bfile):
     Read the brightness data for a single GRB from the brightness data file
     `bfile`; return the trigger number and a list of data entries (strings).
     """
-    line = bfile.readline()
+
+    line = bfile.readline().decode("utf-8")
     if line == '':
         return None, None
+
     data = []
+
     # 1:  trigger, ch1 fluence & err, ch2 fluence & err
     words = line.strip().split()
+
     trig = int(words[0])
     data.extend(words[1:])
+
     # 2:  ch3 fluence & err, ch4 fluence & err
-    words = bfile.readline().strip().split()
+    words = bfile.readline().decode("utf-8").strip().split()
     data.extend(words)
+
     # 3:  64ms peak flux, err, time
-    words = bfile.readline().strip().split()
+    words = bfile.readline().decode("utf-8").strip().split()
     data.extend(words)
+
     # 4:  256ms peak flux, err, time
-    words = bfile.readline().strip().split()
+    words = bfile.readline().decode("utf-8").strip().split()
     data.extend(words)
+
     # 5:  1024ms peak flux, err, time
-    words = bfile.readline().strip().split()
+    words = bfile.readline().decode("utf-8").strip().split()
     data.extend(words)
+
     return trig, data
 
 def fetch_summaries():
@@ -114,19 +123,25 @@ def fetch_summaries():
     # Read basic data, defining the GRB objects.  Add the trigger data path.
     GRBs = GRBCollection()
     ncomp = 0  # count complete GRBs (not overwritten by subsequent GRB)
+
     for line in basic:
+
         if not line:  # in case of empty lines at end
             break
-        grb = GRB(line)
+
+        grb = GRB(line.decode("utf-8"))
+
         if grb.trigger in GRBs:
-            raise ValueError, 'Duplicate entries for trigger %i !' % grb.trigger
+            raise ValueError('Duplicate entries for trigger %i !' % grb.trigger)
+
         GRBs.add(grb)
+
         if not grb.incomplete:
             ncomp += 1
+
     basic.close()
-    print 'Read data for', len(GRBs), 'triggers from basic table,', ncomp,\
-        'complete...'
-    print
+    print('Read data for', len(GRBs), 'triggers from basic table,', ncomp, 'complete...\n')
+
 
     # Add brightness (flux, fluence) data.
     nf = 0
@@ -141,6 +156,7 @@ def fetch_summaries():
         else:
             extra.append(trigger)
     bright4.close()
+
     while True:
         trigger, data = get_grb_bright(bright5)
         if trigger is None:
@@ -151,15 +167,16 @@ def fetch_summaries():
         else:
             extra.append(trigger)
     bright5.close()
-    print 'Read flux data for', nf, 'basic table triggers.'
-    print 'Extraneous flux data for:', extra
+    print ('Read flux data for', nf, 'basic table triggers.')
+    print ('Extraneous flux data for:', extra)
     if extra:
-        print '***** Data for these GRBs was ignored!!! *****'
-    print
+        print ('***** Data for these GRBs was ignored!!! *****\n')
+    print()
 
     # Add duration data.
     ndur = 0
     extra = []
+
     for line in durn:
         if not line:
             break
@@ -170,21 +187,28 @@ def fetch_summaries():
             ndur += 1
         else:  #
             extra.append(trigger)
+
     durn.close()
-    print 'Read duration data for', ndur, 'basic table triggers.'
-    print 'Extraneous data for:', extra
+    print ('Read duration data for', ndur, 'basic table triggers.')
+    print ('Extraneous data for:', extra)
     if extra:
-        print '***** Data for these GRBs was ignored!!! *****'
-    print
+        print ('***** Data for these GRBs was ignored!!! *****')
+    print()
 
     # Add comments.
     ncom = 0
     extra = []
-    for line in comments:
-        if not line:
+
+    for line_ in comments:
+
+        if not line_:
             break
+
+        line = line_.decode('utf-8')
+
         if line[0] == '#':  # header
             continue
+
         trigger = int(line[:6].strip())
         flag = line[11]
         com = line[14:].strip()
@@ -193,11 +217,12 @@ def fetch_summaries():
             ncom += 1
         else:  #
             extra.append(trigger)
-    durn.close()
-    print 'Read comment data for', ncom, 'basic table triggers.'
-    print 'Extraneous data for:', extra
+
+    comments.close()
+    print ('Read comment data for', ncom, 'basic table triggers.')
+    print ('Extraneous data for:', extra)
     if extra:
-        print '***** Data for these GRBs was ignored!!! *****'
+        print ('***** Data for these GRBs was ignored!!! *****')
 
     return GRBs
 
@@ -221,6 +246,7 @@ def load_catalog(root_dir=root):
     # Make sure root directory exists.
     root = abspath(root_dir)  # assigns full path throughout package
     rc_dir = join(root, raw_cache)
+
     if not exists(root):
         mkdir(root)
     if not exists(rc_dir):
@@ -228,10 +254,12 @@ def load_catalog(root_dir=root):
  
     try:
         GRBs = read_summaries()
+
     except IOError:
+
         GRBs = fetch_summaries()
-        sfile = file(join(root,summaries), 'wb')
-        cPickle.dump(GRBs, sfile, 2)  # protocol 2 for efficiency
+        sfile = open(join(root,summaries), 'wb')
+        pickle.dump(GRBs, sfile, 2)  # protocol 2 for efficiency
         sfile.close()
 
     return GRBs
